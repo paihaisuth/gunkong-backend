@@ -15,14 +15,32 @@ const PORT = process.env.PORT || 8000
 
 app.use(helmet())
 
-app.use(
-    cors({
-        origin: process.env.FRONTEND_URL,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
-        credentials: true,
-    })
-)
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (process.env.NODE_ENV === 'development') {
+            return callback(null, true)
+        }
+
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'https://gunkong-web.vercel.app',
+        ].filter(Boolean)
+
+        if (!origin) return callback(null, true)
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            console.log('CORS blocked origin:', origin)
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}
+
+app.use(cors(corsOptions))
 
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'))
