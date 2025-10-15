@@ -17,9 +17,9 @@ app.use(helmet())
 
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || '*',
+        origin: process.env.FRONTEND_URL,
         credentials: true,
-    }),
+    })
 )
 
 if (process.env.NODE_ENV === 'development') {
@@ -56,17 +56,17 @@ const startServer = async () => {
         } else {
             console.log('⚠️  Starting server without database connection...')
             console.log(
-                '📝 Some features may not work until database is connected',
+                '📝 Some features may not work until database is connected'
             )
         }
 
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on http://localhost:${PORT}`)
             console.log(
-                `📝 API Documentation: http://localhost:${PORT}/api/health`,
+                `📝 API Documentation: http://localhost:${PORT}/api/health`
             )
             console.log(
-                `🌍 Environment: ${process.env.NODE_ENV || 'development'}`,
+                `🌍 Environment: ${process.env.NODE_ENV || 'development'}`
             )
 
             if (!dbConnected) {
