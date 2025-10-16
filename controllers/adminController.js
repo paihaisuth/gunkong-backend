@@ -1,4 +1,9 @@
 const User = require('../models/user')
+const {
+    responseFormat,
+    responseArrayFormat,
+    errorResponseFormat,
+} = require('../utils/responseFormat')
 
 // @desc    Get all users (Admin)
 // @route   GET /api/admin/users
@@ -28,26 +33,22 @@ const getAllUsers = async (req, res) => {
             ],
         })
 
-        res.json({
-            success: true,
-            data: {
-                users,
-                pagination: {
-                    currentPage: page,
-                    totalPages: Math.ceil(count / limit),
-                    totalUsers: count,
-                    hasNextPage: page < Math.ceil(count / limit),
-                    hasPrevPage: page > 1,
-                },
-            },
-        })
+        return responseArrayFormat(
+            res,
+            200,
+            true,
+            users,
+            'Users Retrieved Successfully',
+            'All users have been retrieved successfully'
+        )
     } catch (error) {
         console.error('Get all users error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while retrieving users',
+            error.message
+        )
     }
 }
 
@@ -73,23 +74,25 @@ const getUserById = async (req, res) => {
         })
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
-        res.json({
-            success: true,
-            data: user,
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Retrieved Successfully',
+            'User details have been retrieved successfully',
+            user
+        )
     } catch (error) {
         console.error('Get user by ID error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while retrieving user',
+            error.message
+        )
     }
 }
 
@@ -104,10 +107,7 @@ const updateUser = async (req, res) => {
         const user = await User.findByPk(req.params.id)
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
         const updateData = {
@@ -142,18 +142,22 @@ const updateUser = async (req, res) => {
         }
         delete userResponse.id
 
-        res.json({
-            success: true,
-            message: 'User updated successfully',
-            data: userResponse,
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Updated Successfully',
+            'User has been updated successfully',
+            userResponse
+        )
     } catch (error) {
         console.error('Update user error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while updating user',
+            error.message
+        )
     }
 }
 
@@ -165,25 +169,27 @@ const deleteUser = async (req, res) => {
         const user = await User.findByPk(req.params.id)
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
         await user.update({ isActive: false })
 
-        res.json({
-            success: true,
-            message: 'User deleted successfully',
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Deleted Successfully',
+            'User has been deactivated successfully',
+            null
+        )
     } catch (error) {
         console.error('Delete user error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while deleting user',
+            error.message
+        )
     }
 }
 
@@ -195,25 +201,27 @@ const activateUser = async (req, res) => {
         const user = await User.findByPk(req.params.id)
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
         await user.update({ isActive: true })
 
-        res.json({
-            success: true,
-            message: 'User activated successfully',
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Activated Successfully',
+            'User has been activated successfully',
+            null
+        )
     } catch (error) {
         console.error('Activate user error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while activating user',
+            error.message
+        )
     }
 }
 
@@ -225,25 +233,27 @@ const deactivateUser = async (req, res) => {
         const user = await User.findByPk(req.params.id)
 
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found',
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
         await user.update({ isActive: false })
 
-        res.json({
-            success: true,
-            message: 'User deactivated successfully',
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Deactivated Successfully',
+            'User has been deactivated successfully',
+            null
+        )
     } catch (error) {
         console.error('Deactivate user error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while deactivating user',
+            error.message
+        )
     }
 }
 
@@ -267,32 +277,39 @@ const getUserStats = async (req, res) => {
             },
         })
 
-        res.json({
-            success: true,
-            data: {
-                totalUsers,
-                activeUsers,
-                inactiveUsers,
-                recentUsers,
-                stats: {
-                    activePercentage:
-                        totalUsers > 0
-                            ? ((activeUsers / totalUsers) * 100).toFixed(2)
-                            : 0,
-                    inactivePercentage:
-                        totalUsers > 0
-                            ? ((inactiveUsers / totalUsers) * 100).toFixed(2)
-                            : 0,
-                },
+        const statsData = {
+            totalUsers,
+            activeUsers,
+            inactiveUsers,
+            recentUsers,
+            stats: {
+                activePercentage:
+                    totalUsers > 0
+                        ? ((activeUsers / totalUsers) * 100).toFixed(2)
+                        : 0,
+                inactivePercentage:
+                    totalUsers > 0
+                        ? ((inactiveUsers / totalUsers) * 100).toFixed(2)
+                        : 0,
             },
-        })
+        }
+
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Statistics Retrieved Successfully',
+            'User statistics have been retrieved successfully',
+            statsData
+        )
     } catch (error) {
         console.error('Get user stats error:', error)
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while retrieving user statistics',
+            error.message
+        )
     }
 }
 

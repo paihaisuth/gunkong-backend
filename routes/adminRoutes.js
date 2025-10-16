@@ -12,11 +12,11 @@ router.use(authMiddleware.protect)
 
 router.get('/users', adminController.getAllUsers)
 router.get('/users/stats', adminController.getUserStats)
-router.get('/users/:id', adminController.getUserById)
+router.get('/user/:id', adminController.getUserById)
 router.put(
-    '/users/:id',
+    '/user/:id',
     validation.validateUserUpdate,
-    adminController.updateUser
+    adminController.updateUser,
 )
 router.delete('/users/:id', adminController.deleteUser)
 
