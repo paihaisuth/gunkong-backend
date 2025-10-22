@@ -1,8 +1,11 @@
-const User = require('../models/user')
+const { User } = require('../models')
 const jwt = require('jsonwebtoken')
 const { Op } = require('sequelize')
+const {
+    responseFormat,
+    errorResponseFormat,
+} = require('../utils/responseFormat')
 
-// Generate JWT access token (short-lived) with user data
 const generateAccessToken = (user) => {
     const payload = {
         userId: user.id,
@@ -14,7 +17,7 @@ const generateAccessToken = (user) => {
         type: 'access',
     }
     return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
-        expiresIn: '15m',
+        expiresIn: '1hr',
     })
 }
 
@@ -40,9 +43,6 @@ const generateTokens = (user) => {
     }
 }
 
-// @desc    Register a new user
-// @route   POST /register
-// @access  Public
 const register = async (req, res) => {
     try {
         const { email, username, password, fullName, phone, role } = req.body
@@ -54,26 +54,11 @@ const register = async (req, res) => {
         })
 
         if (existingUser) {
-            return res.status(400).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Registration Failed',
-                    description:
-                        'User with this email or username already exists',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'email/username',
-                                message:
-                                    'User with this email or username already exists',
-                                code: 'USER_EXISTS',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                400,
+                'User with this email or username already exists'
+            )
         }
 
         const user = await User.create({
@@ -87,44 +72,28 @@ const register = async (req, res) => {
 
         const tokens = generateTokens(user)
 
-        res.status(201).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Registration Successful',
-                description: 'User has been registered successfully',
-                item: {
-                    success: true,
-                    accessToken: tokens.accessToken,
-                    refreshToken: tokens.refreshToken,
-                },
-            },
-        })
+        responseFormat(
+            res,
+            201,
+            true,
+            'Registration Successful',
+            'User has been registered successfully',
+            {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            }
+        )
     } catch (error) {
         console.error('Registration error:', error)
-        res.status(500).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Registration Error',
-                description: 'Server error occurred during registration',
-                item: {
-                    success: false,
-                    errors: [
-                        {
-                            field: 'server',
-                            message: 'Server error during registration',
-                            code: 'SERVER_ERROR',
-                            value: error.message,
-                        },
-                    ],
-                },
-            },
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred during registration',
+            error.message
+        )
     }
 }
 
-// @desc    Login user
-// @route   POST /login
-// @access  Public
 const login = async (req, res) => {
     try {
         const { email, username, password } = req.body
@@ -137,143 +106,64 @@ const login = async (req, res) => {
         })
 
         if (!user) {
-            return res.status(401).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Login Failed',
-                    description: 'Invalid credentials provided',
-                    success: false,
-                    errors: [
-                        {
-                            field: 'credentials',
-                            message: 'Invalid credentials',
-                            code: 'INVALID_CREDENTIALS',
-                            value: null,
-                        },
-                    ],
-                },
-            })
+            return errorResponseFormat(res, 401, 'Invalid credentials provided')
         }
 
         const isPasswordValid = await user.comparePassword(password)
         if (!isPasswordValid) {
-            return res.status(401).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Login Failed',
-                    description: 'Invalid credentials provided',
-                    success: false,
-                    errors: [
-                        {
-                            field: 'password',
-                            message: 'Invalid credentials',
-                            code: 'INVALID_CREDENTIALS',
-                            value: null,
-                        },
-                    ],
-                },
-            })
+            return errorResponseFormat(res, 401, 'Invalid credentials provided')
         }
 
         const tokens = generateTokens(user)
 
-        res.json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Login Successful',
-                description: 'User has been authenticated successfully',
-                item: {
-                    success: true,
-                    accessToken: tokens.accessToken,
-                    refreshToken: tokens.refreshToken,
-                },
-            },
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'Login Successful',
+            'User has been authenticated successfully',
+            {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            }
+        )
     } catch (error) {
         console.error('Login error:', error)
-        res.status(500).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Login Error',
-                description: 'Server error occurred during login',
-                item: {
-                    success: false,
-                    errors: [
-                        {
-                            field: 'server',
-                            message: 'Server error during login',
-                            code: 'SERVER_ERROR',
-                            value: error.message,
-                        },
-                    ],
-                },
-            },
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred during login',
+            error.message
+        )
     }
 }
 
-// @desc    Get current user info (from token)
-// @route   GET /me
-// @access  Private
 const getMe = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['password'] },
+            attributes: { exclude: ['id', 'password'] },
         })
 
         if (!user) {
-            return res.status(404).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'User Not Found',
-                    description: 'The requested user could not be found',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'user',
-                                message: 'User not found',
-                                code: 'USER_NOT_FOUND',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
-        res.json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'User Profile',
-                description: 'Current user profile information',
-                item: {
-                    success: true,
-                    user: user,
-                },
-            },
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'User Profile',
+            'Current user profile information',
+            user
+        )
     } catch (error) {
         console.error('Get me error:', error)
-        res.status(500).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Server Error',
-                description:
-                    'Server error occurred while fetching user profile',
-                item: {
-                    success: false,
-                    errors: [
-                        {
-                            field: 'server',
-                            message: 'Server error',
-                            code: 'SERVER_ERROR',
-                            value: error.message,
-                        },
-                    ],
-                },
-            },
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while fetching user profile',
+            error.message
+        )
     }
 }
 
@@ -282,23 +172,19 @@ const getMe = async (req, res) => {
 // @access  Private
 // This will be handled client-side by removing the token from storage (optional case)
 const logout = async (req, res) => {
-    res.json({
-        apiVersion: '0.1.0',
-        data: {
-            title: 'Logout Successful',
-            description: 'User has been logged out successfully',
-            item: {
-                success: true,
-                message:
-                    'Logout successful. Please remove token from client storage.',
-            },
-        },
-    })
+    return responseFormat(
+        res,
+        200,
+        true,
+        'Logout Successful',
+        'User has been logged out successfully',
+        {
+            message:
+                'Logout successful. Please remove token from client storage.',
+        }
+    )
 }
 
-// @desc    Change user password
-// @route   PUT /change-password
-// @access  Private
 const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body
@@ -306,118 +192,53 @@ const changePassword = async (req, res) => {
         const user = await User.findByPk(req.user.id)
 
         if (!user) {
-            return res.status(404).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'User Not Found',
-                    description: 'The requested user could not be found',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'user',
-                                message: 'User not found',
-                                code: 'USER_NOT_FOUND',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(res, 404, 'User not found')
         }
 
-        // Verify current password
         const isCurrentPasswordValid = await user.comparePassword(
             currentPassword
         )
         if (!isCurrentPasswordValid) {
-            return res.status(400).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Password Change Failed',
-                    description: 'Current password is incorrect',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'currentPassword',
-                                message: 'Current password is incorrect',
-                                code: 'INVALID_PASSWORD',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                400,
+                'Current password is incorrect'
+            )
         }
 
-        // Update password
         await user.update({ password: newPassword })
 
-        res.json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Password Changed',
-                description: 'Password has been changed successfully',
-                item: {
-                    success: true,
-                    message: 'Password changed successfully',
-                },
-            },
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'Password Changed Successfully',
+            'Your password has been changed successfully',
+            { message: 'Password changed successfully' }
+        )
     } catch (error) {
         console.error('Change password error:', error)
-        res.status(500).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Password Change Error',
-                description: 'Server error occurred while changing password',
-                item: {
-                    success: false,
-                    errors: [
-                        {
-                            field: 'server',
-                            message: 'Server error',
-                            code: 'SERVER_ERROR',
-                            value: error.message,
-                        },
-                    ],
-                },
-            },
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while changing password',
+            error.message
+        )
     }
 }
 
-// @desc    Refresh access token
-// @route   POST /refresh-token
-// @access  Public
 const refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body
 
         if (!refreshToken) {
-            return res.status(400).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Refresh Token Required',
-                    description:
-                        'Refresh token is required to generate new access token',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'refreshToken',
-                                message: 'Refresh token is required',
-                                code: 'REFRESH_TOKEN_REQUIRED',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                400,
+                'Refresh token is required to generate new access token'
+            )
         }
 
-        // Verify refresh token
         let decoded
         try {
             decoded = jwt.verify(
@@ -425,111 +246,54 @@ const refreshToken = async (req, res) => {
                 process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key'
             )
         } catch (error) {
-            return res.status(401).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Invalid Refresh Token',
-                    description:
-                        'The provided refresh token is invalid or expired',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'refreshToken',
-                                message: 'Invalid or expired refresh token',
-                                code: 'INVALID_REFRESH_TOKEN',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                401,
+                'The provided refresh token is invalid or expired'
+            )
         }
 
-        // Check if it's actually a refresh token
         if (decoded.type !== 'refresh') {
-            return res.status(401).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'Invalid Token Type',
-                    description: 'The provided token is not a refresh token',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'refreshToken',
-                                message: 'Invalid token type',
-                                code: 'INVALID_TOKEN_TYPE',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                401,
+                'The provided token is not a refresh token'
+            )
         }
 
-        // Find user
         const user = await User.findByPk(decoded.userId, {
             attributes: { exclude: ['password'] },
         })
 
         if (!user || !user.isActive) {
-            return res.status(401).json({
-                apiVersion: '0.1.0',
-                data: {
-                    title: 'User Not Found',
-                    description:
-                        'User associated with this token no longer exists or is inactive',
-                    item: {
-                        success: false,
-                        errors: [
-                            {
-                                field: 'user',
-                                message: 'User not found or inactive',
-                                code: 'USER_NOT_FOUND',
-                                value: null,
-                            },
-                        ],
-                    },
-                },
-            })
+            return errorResponseFormat(
+                res,
+                401,
+                'User associated with this token no longer exists or is inactive'
+            )
         }
 
-        // Generate new tokens with user data embedded
         const tokens = generateTokens(user)
 
-        res.json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Token Refreshed',
-                description: 'New access token generated successfully',
-                item: {
-                    success: true,
-                    accessToken: tokens.accessToken,
-                    refreshToken: tokens.refreshToken,
-                },
-            },
-        })
+        return responseFormat(
+            res,
+            200,
+            true,
+            'Token Refreshed Successfully',
+            'New access token generated successfully',
+            {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            }
+        )
     } catch (error) {
         console.error('Refresh token error:', error)
-        res.status(500).json({
-            apiVersion: '0.1.0',
-            data: {
-                title: 'Token Refresh Error',
-                description: 'Server error occurred while refreshing token',
-                item: {
-                    success: false,
-                    errors: [
-                        {
-                            field: 'server',
-                            message: 'Server error during token refresh',
-                            code: 'SERVER_ERROR',
-                            value: error.message,
-                        },
-                    ],
-                },
-            },
-        })
+        return errorResponseFormat(
+            res,
+            500,
+            'Server error occurred while refreshing token',
+            error.message
+        )
     }
 }
 
@@ -540,4 +304,5 @@ module.exports = {
     logout,
     changePassword,
     refreshToken,
+    generateTokens,
 }

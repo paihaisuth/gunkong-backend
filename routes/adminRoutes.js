@@ -4,17 +4,15 @@ const adminController = require('../controllers/adminController')
 const authMiddleware = require('../middleware/auth')
 const validation = require('../middleware/validation')
 
-// All admin routes require authentication
-router.use(authMiddleware.protect)
+router.use(authMiddleware.protectWithRefresh)
 
-// TODO: Add admin role middleware when roles are implemented
-// router.use(authMiddleware.restrictTo('admin'));
+router.use(authMiddleware.restrictTo('admin'))
 
 router.get('/users', adminController.getAllUsers)
 router.get('/users/stats', adminController.getUserStats)
-router.get('/users/:id', adminController.getUserById)
+router.get('/user/:id', adminController.getUserById)
 router.put(
-    '/users/:id',
+    '/user/:id',
     validation.validateUserUpdate,
     adminController.updateUser
 )

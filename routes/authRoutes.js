@@ -10,9 +10,10 @@ router.post(
 )
 router.post('/login', validation.validateUserLogin, authController.login)
 router.post('/logout', authController.logout)
+router.post('/refresh-token', authController.refreshToken)
 
 const authMiddleware = require('../middleware/auth')
-router.use(authMiddleware.protect)
+router.use(authMiddleware.protectWithRefresh)
 
 router.get('/me', authController.getMe)
 router.put(

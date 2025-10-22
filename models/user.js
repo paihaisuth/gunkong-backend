@@ -106,4 +106,19 @@ User.prototype.hasBankAccount = function () {
     return !!(this.bankAccountNumber && this.bankCode)
 }
 
+User.associate = (models) => {
+    User.hasMany(models.Room, {
+        foreignKey: 'sellerId',
+        as: 'sellingRooms',
+    })
+    User.hasMany(models.Room, {
+        foreignKey: 'buyerId',
+        as: 'buyingRooms',
+    })
+    User.hasMany(models.Room, {
+        foreignKey: 'creatorId',
+        as: 'createdRooms',
+    })
+}
+
 module.exports = User

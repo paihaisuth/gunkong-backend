@@ -1,13 +1,15 @@
 const { body, validationResult } = require('express-validator')
+const { errorResponseFormat } = require('../utils/responseFormat')
 
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-        return res.status(400).json({
-            success: false,
-            message: 'Validation failed',
-            errors: errors.array(),
-        })
+        return errorResponseFormat(
+            res,
+            400,
+            'Validation failed',
+            errors.array()
+        )
     }
     next()
 }
@@ -113,6 +115,51 @@ const validatePasswordChange = [
     handleValidationErrors,
 ]
 
+const validateRoomCreation = [
+    body('buyerId')
+        .optional()
+        .isUUID()
+        .withMessage('buyerId must be a valid UUID'),
+    body('sellerId')
+        .optional()
+        .isUUID()
+        .withMessage('sellerId must be a valid UUID'),
+    body('itemTitle')
+        .isLength({ min: 3, max: 200 })
+        .withMessage('Item title must be between 3 and 200 characters'),
+    body('itemDescription')
+        .optional()
+        .isLength({ max: 2000 })
+        .withMessage('Item description cannot exceed 2000 characters'),
+    body('quantity')
+        .isInt({ min: 1 })
+        .withMessage('Quantity must be at least 1'),
+    body('itemPriceCents')
+        .isInt({ min: 1 })
+        .withMessage('Item price must be at least 1 cent'),
+    body('shippingFeeCents')
+        .optional()
+        .isInt({ min: 0 })
+        .withMessage('Shipping fee must be zero or greater'),
+    body('platformFeeCents')
+        .optional()
+        .isInt({ min: 0 })
+        .withMessage('Platform fee must be zero or greater'),
+    body('currency')
+        .optional()
+        .isIn(['THB'])
+        .withMessage('Currency must be THB'),
+    body('itemImages')
+        .optional()
+        .isArray()
+        .withMessage('Item images must be an array'),
+    body('itemImages.*')
+        .optional()
+        .isURL()
+        .withMessage('Item image entries must be valid URLs'),
+    handleValidationErrors,
+]
+
 // UUID validation for params
 const validateUUID = [
     body('id').optional().isUUID().withMessage('Invalid ID format'),
@@ -124,6 +171,7 @@ module.exports = {
     validateUserLogin,
     validateUserUpdate,
     validatePasswordChange,
+    validateRoomCreation,
     validateUUID,
     handleValidationErrors,
 }
