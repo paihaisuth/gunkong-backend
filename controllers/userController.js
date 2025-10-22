@@ -1,13 +1,10 @@
-const User = require('../models/user')
+const { User } = require('../models')
 const {
     responseFormat,
     responseArrayFormat,
     errorResponseFormat,
 } = require('../utils/responseFormat')
 
-// @desc    Get user by ID (Public info only)
-// @route   GET /api/users/:id
-// @access  Public
 const getUserById = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
@@ -19,7 +16,7 @@ const getUserById = async (req, res) => {
                 'phone',
                 'role',
                 'createdAt',
-            ], // Only public fields
+            ],
             where: { isActive: true },
         })
 
@@ -46,9 +43,6 @@ const getUserById = async (req, res) => {
     }
 }
 
-// @desc    Search users by username, name or email
-// @route   GET /api/users/search
-// @access  Public
 const searchUsers = async (req, res) => {
     try {
         const { q, page = 1, limit = 10 } = req.query

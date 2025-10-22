@@ -1,13 +1,10 @@
-const User = require('../models/user')
+const { User } = require('../models')
 const {
     responseFormat,
     responseArrayFormat,
     errorResponseFormat,
 } = require('../utils/responseFormat')
 
-// @desc    Get all users (Admin)
-// @route   GET /api/admin/users
-// @access  Private/Admin
 const getAllUsers = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1
@@ -52,9 +49,6 @@ const getAllUsers = async (req, res) => {
     }
 }
 
-// @desc    Get user by ID (Admin)
-// @route   GET /api/admin/users/:id
-// @access  Private/Admin
 const getUserById = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
@@ -96,9 +90,6 @@ const getUserById = async (req, res) => {
     }
 }
 
-// @desc    Update user (Admin)
-// @route   PUT /api/admin/users/:id
-// @access  Private/Admin
 const updateUser = async (req, res) => {
     try {
         const { fullName, phone, role, bankAccountNumber, bankCode, isActive } =
@@ -161,9 +152,6 @@ const updateUser = async (req, res) => {
     }
 }
 
-// @desc    Delete user (Admin)
-// @route   DELETE /api/admin/users/:id
-// @access  Private/Admin
 const deleteUser = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id)
@@ -193,9 +181,6 @@ const deleteUser = async (req, res) => {
     }
 }
 
-// @desc    Activate user (Admin)
-// @route   PUT /api/admin/users/:id/activate
-// @access  Private/Admin
 const activateUser = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id)
@@ -225,9 +210,6 @@ const activateUser = async (req, res) => {
     }
 }
 
-// @desc    Deactivate user (Admin)
-// @route   PUT /api/admin/users/:id/deactivate
-// @access  Private/Admin
 const deactivateUser = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id)
@@ -257,9 +239,6 @@ const deactivateUser = async (req, res) => {
     }
 }
 
-// @desc    Get user statistics (Admin)
-// @route   GET /api/admin/users/stats
-// @access  Private/Admin
 const getUserStats = async (req, res) => {
     try {
         const totalUsers = await User.count()

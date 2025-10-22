@@ -1,16 +1,13 @@
-const User = require('../models/user')
+const { User } = require('../models')
 const {
     responseFormat,
     errorResponseFormat,
 } = require('../utils/responseFormat')
 
-// @desc    Get current user profile
-// @route   GET /api/users/profile
-// @access  Private
 const getProfile = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['password'] },
+            attributes: ['email', 'username', 'fullName', 'phone'],
         })
 
         if (!user) {
@@ -36,9 +33,6 @@ const getProfile = async (req, res) => {
     }
 }
 
-// @desc    Update user profile
-// @route   PUT /api/users/profile
-// @access  Private
 const updateProfile = async (req, res) => {
     try {
         const { firstName, lastName, phone } = req.body
@@ -79,9 +73,6 @@ const updateProfile = async (req, res) => {
     }
 }
 
-// @desc    Delete user account (self)
-// @route   DELETE /api/users/profile
-// @access  Private
 const deleteAccount = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id)
@@ -90,7 +81,6 @@ const deleteAccount = async (req, res) => {
             return errorResponseFormat(res, 404, 'User not found')
         }
 
-        // Soft delete by setting isActive to false
         await user.update({ isActive: false })
 
         return responseFormat(

@@ -1,4 +1,4 @@
-const User = require('../models/user')
+const { User } = require('../models')
 const jwt = require('jsonwebtoken')
 const { Op } = require('sequelize')
 const {
@@ -6,7 +6,6 @@ const {
     errorResponseFormat,
 } = require('../utils/responseFormat')
 
-// Generate JWT access token (short-lived) with user data
 const generateAccessToken = (user) => {
     const payload = {
         userId: user.id,
@@ -18,7 +17,7 @@ const generateAccessToken = (user) => {
         type: 'access',
     }
     return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
-        expiresIn: '15m',
+        expiresIn: '1hr',
     })
 }
 
@@ -44,9 +43,6 @@ const generateTokens = (user) => {
     }
 }
 
-// @desc    Register a new user
-// @route   POST /register
-// @access  Public
 const register = async (req, res) => {
     try {
         const { email, username, password, fullName, phone, role } = req.body
@@ -98,9 +94,6 @@ const register = async (req, res) => {
     }
 }
 
-// @desc    Login user
-// @route   POST /login
-// @access  Public
 const login = async (req, res) => {
     try {
         const { email, username, password } = req.body
@@ -134,19 +127,6 @@ const login = async (req, res) => {
                 refreshToken: tokens.refreshToken,
             }
         )
-
-        // res.json({
-        //     apiVersion: '0.1.0',
-        //     data: {
-        //         title: 'Login Successful',
-        //         description: 'User has been authenticated successfully',
-        //         item: {
-        //             success: true,
-        //             accessToken: tokens.accessToken,
-        //             refreshToken: tokens.refreshToken,
-        //         },
-        //     },
-        // })
     } catch (error) {
         console.error('Login error:', error)
         return errorResponseFormat(
@@ -158,13 +138,10 @@ const login = async (req, res) => {
     }
 }
 
-// @desc    Get current user info (from token)
-// @route   GET /me
-// @access  Private
 const getMe = async (req, res) => {
     try {
         const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['password'] },
+            attributes: { exclude: ['id', 'password'] },
         })
 
         if (!user) {
@@ -179,17 +156,6 @@ const getMe = async (req, res) => {
             'Current user profile information',
             user
         )
-        // res.json({
-        //     apiVersion: '0.1.0',
-        //     data: {
-        //         title: 'User Profile',
-        //         description: 'Current user profile information',
-        //         item: {
-        //             success: true,
-        //             user: user,
-        //         },
-        //     },
-        // })
     } catch (error) {
         console.error('Get me error:', error)
         return errorResponseFormat(
@@ -219,9 +185,6 @@ const logout = async (req, res) => {
     )
 }
 
-// @desc    Change user password
-// @route   PUT /change-password
-// @access  Private
 const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body
@@ -232,7 +195,6 @@ const changePassword = async (req, res) => {
             return errorResponseFormat(res, 404, 'User not found')
         }
 
-        // Verify current password
         const isCurrentPasswordValid = await user.comparePassword(
             currentPassword
         )
@@ -244,7 +206,6 @@ const changePassword = async (req, res) => {
             )
         }
 
-        // Update password
         await user.update({ password: newPassword })
 
         return responseFormat(
@@ -266,9 +227,6 @@ const changePassword = async (req, res) => {
     }
 }
 
-// @desc    Refresh access token
-// @route   POST /refresh-token
-// @access  Public
 const refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body
@@ -281,7 +239,6 @@ const refreshToken = async (req, res) => {
             )
         }
 
-        // Verify refresh token
         let decoded
         try {
             decoded = jwt.verify(
@@ -296,7 +253,6 @@ const refreshToken = async (req, res) => {
             )
         }
 
-        // Check if it's actually a refresh token
         if (decoded.type !== 'refresh') {
             return errorResponseFormat(
                 res,
@@ -305,7 +261,6 @@ const refreshToken = async (req, res) => {
             )
         }
 
-        // Find user
         const user = await User.findByPk(decoded.userId, {
             attributes: { exclude: ['password'] },
         })
@@ -318,7 +273,6 @@ const refreshToken = async (req, res) => {
             )
         }
 
-        // Generate new tokens with user data embedded
         const tokens = generateTokens(user)
 
         return responseFormat(
@@ -350,4 +304,5 @@ module.exports = {
     logout,
     changePassword,
     refreshToken,
+    generateTokens,
 }
