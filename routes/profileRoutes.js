@@ -4,7 +4,7 @@ const profileController = require('../controllers/profileController')
 const authMiddleware = require('../middleware/auth')
 const validation = require('../middleware/validation')
 
-router.use(authMiddleware.protect)
+router.use(authMiddleware.protectWithRefresh)
 
 router.get('/', profileController.getProfile)
 router.put('/', validation.validateUserUpdate, profileController.updateProfile)

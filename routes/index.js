@@ -20,32 +20,47 @@ router.get('/health', (req, res) => {
         message: 'Gunkong Backend API is running',
         timestamp: new Date().toISOString(),
         version: '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
         endpoints: {
             authentication: {
                 register: 'POST /api/register',
                 login: 'POST /api/login',
                 logout: 'POST /api/logout',
+                refreshToken: 'POST /api/refresh-token',
                 me: 'GET /api/me',
                 changePassword: 'PUT /api/change-password',
             },
             users: {
-                search: 'GET /api/users/search',
-                getProfile: 'GET /api/users/:id',
+                search: 'GET /api/user/search',
+                getProfile: 'GET /api/user/:id',
             },
             profile: {
                 getProfile: 'GET /api/profile',
                 updateProfile: 'PUT /api/profile',
                 deleteAccount: 'DELETE /api/profile',
             },
+            rooms: {
+                createRoom: 'POST /api/room',
+                getMyRooms: 'GET /api/room/me',
+                getRoomByCode: 'GET /api/room/:roomCode',
+                getRoomById: 'GET /api/room/:id',
+            },
             admin: {
                 getAllUsers: 'GET /api/admin/users',
-                getUserById: 'GET /api/admin/users/:id',
-                updateUser: 'PUT /api/admin/users/:id',
+                getUserById: 'GET /api/admin/user/:id',
+                updateUser: 'PUT /api/admin/user/:id',
                 deleteUser: 'DELETE /api/admin/users/:id',
-                getUserStats: 'GET /api/admin/stats/users',
+                getUserStats: 'GET /api/admin/users/stats',
             },
             system: {
                 health: 'GET /api/health',
+            },
+        },
+        features: {
+            autoRefreshToken: true,
+            jwtExpiry: {
+                accessToken: '1h',
+                refreshToken: '7d',
             },
         },
     })
