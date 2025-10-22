@@ -7,7 +7,8 @@
         "start": "node index.js",
         "dev": "nodemon index.js",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "db:init": "psql -U postgres -d postgres -f database/init.sql"
+        "db:init": "node scripts/init-db.js",
+        "db:migrate": "node scripts/init-db.js"
     },
     "keywords": [],
     "author": "",
