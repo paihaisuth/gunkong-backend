@@ -7,13 +7,7 @@ const roomRoutes = require('./roomRoutes')
 
 const router = express.Router()
 
-// API routes
-router.use('/', authRoutes) // Authentication endpoints at root level
-router.use('/user', userRoutes) // Public user endpoints
-router.use('/profile', profileRoutes) // User profile management
-router.use('/room', roomRoutes) // Transaction room endpoints
-router.use('/admin', adminRoutes) // Admin management endpoints
-
+// Health check endpoint (must be first, before auth middleware)
 router.get('/health', (req, res) => {
     res.json({
         success: true,
@@ -27,6 +21,8 @@ router.get('/health', (req, res) => {
                 login: 'POST /api/login',
                 logout: 'POST /api/logout',
                 refreshToken: 'POST /api/refresh-token',
+                googleLogin: 'GET /api/google',
+                googleCallback: 'GET /api/google/callback',
                 me: 'GET /api/me',
                 changePassword: 'PUT /api/change-password',
             },
@@ -65,5 +61,12 @@ router.get('/health', (req, res) => {
         },
     })
 })
+
+// API routes
+router.use('/', authRoutes) // Authentication endpoints at root level
+router.use('/user', userRoutes) // Public user endpoints
+router.use('/profile', profileRoutes) // User profile management
+router.use('/room', roomRoutes) // Transaction room endpoints
+router.use('/admin', adminRoutes) // Admin management endpoints
 
 module.exports = router

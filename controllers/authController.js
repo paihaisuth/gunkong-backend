@@ -47,6 +47,14 @@ const register = async (req, res) => {
     try {
         const { email, username, password, fullName, phone, role } = req.body
 
+        if (!password) {
+            return errorResponseFormat(
+                res,
+                400,
+                'Password is required for registration'
+            )
+        }
+
         const existingUser = await User.findOne({
             where: {
                 [Op.or]: [{ email }, { username }],
@@ -68,6 +76,7 @@ const register = async (req, res) => {
             fullName,
             phone,
             role: role || 'USER',
+            authProvider: 'local',
         })
 
         const tokens = generateTokens(user)
@@ -297,6 +306,30 @@ const refreshToken = async (req, res) => {
     }
 }
 
+const googleAuthCallback = async (req, res) => {
+    try {
+        if (!req.user) {
+            const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/error?message=Authentication failed`
+            return res.redirect(redirectUrl)
+        }
+
+        const tokens = generateTokens(req.user)
+
+        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`
+        
+        return res.redirect(redirectUrl)
+    } catch (error) {
+        console.error('Google auth callback error:', error)
+        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/error?message=Server error`
+        return res.redirect(redirectUrl)
+    }
+}
+
+const googleAuthFailure = (req, res) => {
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/error?message=Google authentication failed`
+    return res.redirect(redirectUrl)
+}
+
 module.exports = {
     register,
     login,
@@ -305,4 +338,6 @@ module.exports = {
     changePassword,
     refreshToken,
     generateTokens,
+    googleAuthCallback,
+    googleAuthFailure,
 }

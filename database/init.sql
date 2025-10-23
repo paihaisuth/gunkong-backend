@@ -27,6 +27,13 @@ END $$;
 
 DO $$
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_users_auth_provider') THEN
+        CREATE TYPE enum_users_auth_provider AS ENUM ('local', 'google');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_transaction_rooms_status') THEN
         CREATE TYPE enum_transaction_rooms_status AS ENUM (
             'CREATED',
@@ -79,7 +86,10 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(100) NOT NULL UNIQUE,
     phone VARCHAR(20),
     full_name VARCHAR(200),
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
+    google_id VARCHAR(255) UNIQUE,
+    profile_picture VARCHAR(500),
+    auth_provider enum_users_auth_provider NOT NULL DEFAULT 'local',
     role enum_users_role NOT NULL DEFAULT 'USER',
     bank_account_number VARCHAR(12),
     bank_code VARCHAR(3),
@@ -329,6 +339,8 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users (phone);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users (is_active);
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users (google_id);
+CREATE INDEX IF NOT EXISTS idx_users_auth_provider ON users (auth_provider);
 
 -- Transaction Rooms indexes
 CREATE INDEX IF NOT EXISTS idx_transaction_rooms_room_code ON transaction_rooms (room_code);

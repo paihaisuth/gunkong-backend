@@ -45,11 +45,28 @@ const User = sequelize.define(
         },
         password: {
             type: DataTypes.STRING(255),
-            allowNull: false,
+            allowNull: true,
             field: 'password',
             validate: {
                 len: [6, 255],
             },
+        },
+        googleId: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+            unique: true,
+            field: 'google_id',
+        },
+        profilePicture: {
+            type: DataTypes.STRING(500),
+            allowNull: true,
+            field: 'profile_picture',
+        },
+        authProvider: {
+            type: DataTypes.ENUM('local', 'google'),
+            allowNull: false,
+            defaultValue: 'local',
+            field: 'auth_provider',
         },
         role: {
             type: DataTypes.ENUM('USER', 'ADMIN'),
@@ -86,7 +103,7 @@ const User = sequelize.define(
         tableName: 'users',
         hooks: {
             beforeSave: async (user) => {
-                if (user.changed('password')) {
+                if (user.changed('password') && user.password) {
                     user.password = await bcrypt.hash(user.password, 12)
                 }
             },
@@ -95,6 +112,9 @@ const User = sequelize.define(
 )
 
 User.prototype.comparePassword = async function (candidatePassword) {
+    if (!this.password) {
+        return false
+    }
     return bcrypt.compare(candidatePassword, this.password)
 }
 
